@@ -4,7 +4,7 @@
 #include "MiniRemote.h"
 #include "TimeOfDay.h"
 #include "Utils.h"
-#include "ultrasonic.h"
+#include "Ultrasonic.h"
 
 //
 // Alarm time configuration
