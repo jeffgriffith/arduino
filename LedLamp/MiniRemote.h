@@ -129,6 +129,8 @@ class MiniRemote {
           }
         }
         else {
+          Serial.print("Unknown decode_type: ");
+          Serial.println(results.decode_type);
           success = false; // Not a recognized result type.
         }
 
