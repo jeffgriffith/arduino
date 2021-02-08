@@ -22,9 +22,9 @@ StepperAsClock G_stepperAsClock(1, 2, 3, 4);
 //
 // Alarm time configuration
 //
-int G_alarmHour = 6;
+int G_alarmHour = 5;
 int G_alarmMinute = 0;
-int G_alarmDurationMinutes = 4*60;
+int G_alarmDurationMinutes = 6*60;
 
 //
 // Ultrasonic control
@@ -106,10 +106,12 @@ unsigned getColorMask() {
   // Divide the colors and combinations as a a desired fraction of the alarm window.
   //
   float fraction_of_alarm_elapsed = (float)(now - G_alarmStartMillis) / (float)G_alarmDuration;
-  if (fraction_of_alarm_elapsed < 1./4.) return GREEN_MASK;
-  if (fraction_of_alarm_elapsed < 2./4.) return BLUE_MASK;
-  if (fraction_of_alarm_elapsed < 3./4.) return RED_MASK;
-  if (fraction_of_alarm_elapsed < 4./4.) return RED_MASK|BLUE_MASK;
+  if (fraction_of_alarm_elapsed < 1./6.) return GREEN_MASK;
+  if (fraction_of_alarm_elapsed < 2./6.) return GREEN_MASK;
+  if (fraction_of_alarm_elapsed < 3./6.) return GREEN_MASK;
+  if (fraction_of_alarm_elapsed < 4./6.) return BLUE_MASK;
+  if (fraction_of_alarm_elapsed < 5./6.) return RED_MASK;
+  if (fraction_of_alarm_elapsed < 6./6.) return RED_MASK|GREEN_MASK;
   return 0;
 }
  
