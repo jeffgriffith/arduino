@@ -1,3 +1,6 @@
+#ifndef MINI_REMOTE
+#define MINI_REMOTE
+
 #include <IRremote.h>
 
 class MiniRemote {
@@ -144,3 +147,5 @@ class MiniRemote {
       return success;
     }
 };
+
+#endif

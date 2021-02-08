@@ -1,10 +1,23 @@
 
 // 2021/01/03 - adding ultrasonic control
 
+#define USE_STEPPER 0
+
 #include "MiniRemote.h"
 #include "TimeOfDay.h"
 #include "Utils.h"
 #include "Ultrasonic.h"
+
+#if USE_STEPPER
+#include "StepperAsClock.h"
+#endif
+
+//
+// Stepper motor used for a clock face
+//
+#if USE_STEPPER
+StepperAsClock G_stepperAsClock(1, 2, 3, 4);
+#endif
 
 //
 // Alarm time configuration
@@ -27,12 +40,12 @@ Ultrasonic G_ultrasonic(TRIGGER_PIN, ECHO_PIN, ULTRASONIC_ENABLE, TRIGGER_DISTAN
 // Illumination at alarm time and night-light mode as well as providing
 // indicators while remote control functions are in use.
 //
-int BLUE_PIN = 8;
+int BLUE_PIN = 10;
 int GREEN_PIN = 9;
-int RED_PIN = 10;
+int RED_PIN = 7;
 
 // Remote control
-int IR_PIN = 11;
+int IR_PIN = A4; // 12;
 
 int FLASH_PIN = -1;
 
@@ -99,15 +112,19 @@ unsigned getColorMask() {
   if (fraction_of_alarm_elapsed < 4./4.) return RED_MASK|BLUE_MASK;
   return 0;
 }
-
+ 
 void setup() {
   Serial.begin(9600);
 
   G_remote.init();
   G_ultrasonic.init();
-
+  
+#if USE_STEPPER
+  G_stepperAsClock.init();
+#endif
+  
   Utils::outputPins(G_rgbPins, LENGTH(G_rgbPins));
-  G_timeOfDay.setTime(12, 0, 0, millis()); // Default to noon
+  G_timeOfDay.setTime(0, 0, 0, millis()); // Default to noon
   updateAlarmTime();
 }
 
@@ -135,6 +152,15 @@ void indicateTimeOfDay(bool blinkTime) {
       delay(500);
     }
   }
+
+#if USE_STEPPER
+  //
+  // Show time on clock face
+  //
+  float timeAsFraction = ((float)hrs + (float)mins/60.0f)/24.0f;
+  G_stepperAsClock.adjustClock(timeAsFraction);
+#endif
+
 }
 
 void indicateStateChange() {
