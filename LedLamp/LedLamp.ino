@@ -50,12 +50,13 @@ int IR_PIN = A4; // 12;
 int FLASH_PIN = -1;
 
 int G_rgbPins[] {RED_PIN, GREEN_PIN, BLUE_PIN};
+bool G_snoozing = false;
 
 
 //
 // Program state
 //
-enum ProgramState { INIT, MAIN, SET_TIME, SET_ALARM, NIGHTLIGHT };
+enum ProgramState { INIT, MAIN, SET_TIME, SET_ALARM, ULTRASONIC };
 
 //
 // Allow mixing of colors via bit mask.
@@ -297,19 +298,19 @@ ProgramState setAlarmLoop(ProgramState prevState) {
   return nextState;
 }
 
-ProgramState nightlightLoop(ProgramState prevState) {
+ProgramState ultrasonicLoop(ProgramState prevState) {
   
-  ProgramState nextState = NIGHTLIGHT;
+  ProgramState nextState = ULTRASONIC;
 
-  if (prevState != NIGHTLIGHT) {
-    Serial.println("Entered nightlight mode.");
+  if (prevState != ULTRASONIC) {
+    Serial.println("Entered ultrasonic mode.");
     Utils::pinsHigh(G_rgbPins, LENGTH(G_rgbPins));
   }
 
   if (G_ultrasonic.hasFired()) {
     Utils::pinsLow(G_rgbPins, LENGTH(G_rgbPins));
     nextState = MAIN;
-    Serial.println("Leaving nightlight mode.");
+    Serial.println("Leaving ultrasonic mode.");
   }
 
   return nextState;
@@ -323,13 +324,19 @@ ProgramState mainLoop(ProgramState prevState) {
   ProgramState nextState = MAIN;
 
   //
-  // Illuminate when appropriate
+  // Illuminate when appropriate. If we are snoozing, do
+  // not illuminate.
   //
   unsigned colorMask = getColorMask();
-  
-  digitalWrite(RED_PIN, colorMask & RED_MASK);
-  digitalWrite(GREEN_PIN, colorMask & GREEN_MASK);
-  digitalWrite(BLUE_PIN, colorMask & BLUE_MASK);
+  unsigned effectiveMask = G_snoozing ? 0 : colorMask;
+
+  digitalWrite(RED_PIN, effectiveMask & RED_MASK);
+  digitalWrite(GREEN_PIN, effectiveMask & GREEN_MASK);
+  digitalWrite(BLUE_PIN, effectiveMask & BLUE_MASK);
+
+  // Can't snooze when not alarming. This makes the
+  // nightlight mode possible again.
+  G_snoozing = colorMask == 0 ? false : G_snoozing;
 
   //
   // Now see if we got remote input and take action on it if so.
@@ -353,7 +360,12 @@ ProgramState mainLoop(ProgramState prevState) {
     }
   }
   else if (G_ultrasonic.hasFired()) {
-    nextState = NIGHTLIGHT;
+    if (colorMask != 0) {
+      G_snoozing = !G_snoozing;
+    }
+    else {
+      nextState = ULTRASONIC;
+    }
   }
   return nextState;
 }
@@ -375,8 +387,8 @@ void loop() {
     case SET_ALARM:
       nextState = setAlarmLoop(S_previousState);
       break;
-    case NIGHTLIGHT:
-      nextState = nightlightLoop(S_previousState);
+    case ULTRASONIC:
+      nextState = ultrasonicLoop(S_previousState);
       break;
     default:
       nextState = MAIN;
